@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VYRO</title>
+<style>
+*{scrollbar-width:none}*::-webkit-scrollbar{display:none}
+*{box-sizing:border-box}body{margin:0;background:#000;color:#fff;font-family:Arial,sans-serif}
+.app{max-width:430px;height:100vh;margin:auto;background:#111;position:relative;overflow:hidden}
+.auth{position:absolute;inset:0;background:#090909;z-index:20;padding:30px 22px;display:flex;flex-direction:column;justify-content:center}
+.auth h1{text-align:center;font-size:48px;letter-spacing:6px;margin:0}.auth p{text-align:center;color:#999}
+input,button{font:inherit}.field{width:100%;padding:14px;margin:7px 0;border:1px solid #444;border-radius:10px;background:#202020;color:#fff}
+.primary,.secondary{width:100%;padding:14px;margin-top:8px;border-radius:10px;cursor:pointer}.primary{border:0;background:#fff;color:#000;font-weight:bold}.secondary{border:1px solid #555;background:#222;color:#fff}
+.status{color:#aaa;font-size:13px;min-height:22px;margin-top:10px}.hidden{display:none!important}
+header{position:absolute;z-index:5;top:0;left:0;right:0;height:58px;padding:0 18px;display:flex;align-items:center;justify-content:space-between;background:#111}.logo{font-weight:900;font-size:27px;letter-spacing:3px}.homeSearchBtn{border:0;background:none;color:#fff;font-size:30px;cursor:pointer;padding:4px 8px}
+.panel{display:none;height:100vh;padding:75px 16px 75px;overflow:auto}.panel.active{display:block}
+.feed{height:100%;overflow-y:auto;scroll-snap-type:y mandatory}.video{height:100%;min-height:100%;scroll-snap-align:start;position:relative;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#171717,#292929)}
+.placeholder{font-size:65px;font-weight:900;opacity:.12}.info{position:absolute;left:15px;bottom:88px}.user{font-weight:bold}.caption{margin-top:7px}.actions{position:absolute;right:12px;bottom:88px;display:flex;flex-direction:column;align-items:center;gap:10px}.action{background:none;border:0;color:#fff;font-size:28px;cursor:pointer}.count{font-size:12px}
+.card{background:#1b1b1b;padding:16px;border-radius:14px;margin-top:12px}h2{margin-top:0}
+nav{position:absolute;z-index:10;bottom:0;left:0;right:0;height:65px;background:#090909;display:flex;justify-content:space-around;align-items:center}
+nav button{border:0;background:none;color:#aaa;cursor:pointer;font-size:12px}nav button b{display:block;font-size:22px}nav button.active{color:#fff}
+
+.video video{width:100%;height:100%;object-fit:cover;background:#000;cursor:pointer}.profileVideos{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin-top:12px}.profileVideo{position:relative;aspect-ratio:9/14;background:#222;overflow:hidden;cursor:pointer}.profileVideo video{width:100%;height:100%;object-fit:cover;display:block}.profileVideo .playState{position:absolute;left:7px;bottom:7px;font-size:14px;text-shadow:0 1px 4px #000;pointer-events:none}.profileVideo .viewCount{position:absolute;left:7px;bottom:7px;background:rgba(0,0,0,.58);padding:3px 7px;border-radius:10px;font-size:12px;color:#fff;text-shadow:0 1px 3px #000;pointer-events:none}.profileVideo .viewCount.right{left:auto;right:7px}.profileVideoMenuBtn{position:absolute;top:7px;right:7px;z-index:8;width:34px;height:34px;border:0;border-radius:50%;background:rgba(0,0,0,.62);color:#fff;font-size:21px;line-height:1;cursor:pointer}.profileVideoMenu{position:absolute;top:45px;right:7px;z-index:9;display:none;min-width:150px;background:#171717;border:1px solid #333;border-radius:12px;padding:5px;box-shadow:0 8px 25px rgba(0,0,0,.45)}.profileVideoMenu.open{display:block}.profileVideoDelete{width:100%;border:0;background:transparent;color:#ff5b6e;padding:11px 12px;border-radius:9px;text-align:left;font-weight:700;font-size:14px;cursor:pointer}.profileVideoDelete:hover{background:#292929}.profileEmpty{grid-column:1/-1}.profileCount{color:#aaa;font-size:13px}@media(max-width:600px){.profileVideos{grid-template-columns:repeat(3,1fr)}}.video:after{content:"";position:absolute;inset:0;background:linear-gradient(transparent 45%,rgba(0,0,0,.72));pointer-events:none}.info,.actions,.sound{z-index:2}.sound{position:absolute;top:72px;right:14px;border:0;background:rgba(0,0,0,.45);color:#fff;border-radius:50%;width:42px;height:42px;font-size:20px;cursor:pointer;z-index:3}.actions{bottom:92px}.action{line-height:1}.action.liked{color:#ff3b6b}.action.follow{font-size:13px;border:1px solid #fff;border-radius:8px;padding:5px 8px}.commentBox{position:absolute;z-index:70;left:0;right:0;bottom:0;background:#161616;border-radius:18px 18px 0 0;padding:16px;transform:translateY(105%);transition:.25s;max-height:58vh;display:flex;flex-direction:column;gap:10px}.commentBox.open{transform:translateY(0)}.comments{overflow:auto;min-height:80px}.comment{padding:8px 0;border-bottom:1px solid #333}.commentForm{display:flex;gap:8px}.commentForm input{flex:1;margin:0}.commentForm button{width:auto;padding:10px 14px;margin:0}.closeComments{position:absolute;right:12px;top:10px;background:none;border:0;color:#fff;font-size:22px}.emptyFeed{text-align:center;color:#aaa;padding:50px 20px}.loading{padding:20px;text-align:center;color:#aaa}.videoMeta{position:absolute;left:15px;bottom:65px;font-size:12px;color:#ddd;z-index:2} .uploadLabel{display:block;width:100%;padding:14px;text-align:center;border:1px dashed #666;border-radius:10px;background:#222;cursor:pointer;font-weight:bold}.uploadHint{color:#aaa;font-size:13px;padding:10px 2px}.progressWrap{height:7px;background:#333;border-radius:8px;overflow:hidden;margin-top:10px}.progressBar{height:100%;width:0%;background:#fff;transition:width .15s} @media(max-width:600px){.app{max-width:none;width:100vw}.video{height:calc(100vh - 65px);min-height:calc(100vh - 65px)}}
+.profileViewer{position:fixed;inset:0;background:#000;z-index:40;display:none;align-items:center;justify-content:center}.profileViewer.open{display:flex}.profileViewer video{width:100%;height:100%;object-fit:contain;background:#000}.profileViewerClose{position:absolute;top:14px;right:14px;z-index:43;width:44px;height:44px;border:0;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;font-size:28px;cursor:pointer}.profileViewerInfo{position:absolute;z-index:42;left:16px;right:95px;bottom:24px;text-shadow:0 2px 5px #000}.profileViewerActions{position:absolute;z-index:45;right:14px;bottom:82px;display:flex;flex-direction:column;align-items:center;gap:14px}.profileViewerActionGroup{display:flex;flex-direction:column;align-items:center;gap:3px}.profileViewerAction{width:52px;height:52px;border:0;border-radius:50%;background:rgba(0,0,0,.62);color:#fff;font-size:27px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center}.profileViewerAction.liked{color:#ff4d67}.profileViewerCount{font-size:14px;color:#fff;font-weight:700;text-shadow:0 1px 4px #000}.profileViewerShareLabel{font-size:12px;color:#fff;font-weight:700;text-shadow:0 1px 4px #000}.shareMenu{position:fixed;inset:0;z-index:100;display:none;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.55)}.shareMenu.open{display:flex}.shareMenuCard{width:min(460px,100%);background:#171717;border-radius:20px 20px 0 0;padding:18px 16px 24px;box-shadow:0 -8px 30px rgba(0,0,0,.45)}.shareMenuTitle{text-align:center;font-weight:800;font-size:18px;margin-bottom:16px}.shareOptions{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.shareOption{border:0;background:#242424;color:#fff;border-radius:14px;padding:13px 8px;cursor:pointer;font-size:13px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:7px}.shareOptionIcon{font-size:27px}.shareClose{width:100%;margin-top:14px;padding:12px;border:0;border-radius:12px;background:#333;color:#fff;font-weight:700;cursor:pointer}.profileViewerUser{font-weight:bold;margin-bottom:6px}.profileViewerCaption{color:#eee}.profileViewer video{cursor:pointer}</style>
+</head>
+<body>
+<div class="app">
+<div id="auth" class="auth">
+<h1>VYRO</h1><p>Tu espacio para compartir videos.</p>
+<input id="email" class="field" type="email" placeholder="Correo electrónico">
+<input id="password" class="field" type="password" placeholder="Contraseña">
+<input id="username" class="field" placeholder="Nombre de usuario (solo al crear cuenta)" maxlength="20" autocomplete="username">
+<button id="loginBtn" class="primary">Iniciar sesión</button>
+<button id="registerBtn" class="secondary">Crear cuenta</button>
+<div class="phone-login">
+  <input id="phone" type="tel" placeholder="+18095551234" autocomplete="tel">
+  <button id="sendCode">📱 Enviar código por SMS</button>
+  <input id="smsCode" type="text" inputmode="numeric" placeholder="Código SMS" autocomplete="one-time-code" style="display:none">
+  <button id="verifyCode" style="display:none">✅ Verificar código</button>
+  <div id="recaptcha-container"></div>
+</div>
+<div id="status" class="status"></div><p style="font-size:12px;color:#777;margin-top:14px;text-align:center">Crea tu cuenta gratis para publicar videos, dar likes y comentar.</p>
+</div>
+
+<header><div class="logo">VYRO</div><button class="homeSearchBtn" type="button" aria-label="Buscar" onclick="focusSearch()">⌕</button></header>
+
+<section id="home" class="panel active"><div id="feed" class="feed"><div class="loading">Cargando VYRO…</div></div></section>
+
+<section id="search" class="panel"><button class="secondary" type="button" onclick="show('home',document.querySelector('nav button'))">← Volver al inicio</button><h2>Buscar</h2><input id="searchInput" class="field" placeholder="Buscar usuarios o videos" autocomplete="off"><div id="searchResults" class="card">Escribe para buscar usuarios o videos.</div></section>
+<section id="create" class="panel"><h2>Crear</h2><div class="card"><label for="videoFile" class="uploadLabel">🎥 Seleccionar video</label><input id="videoFile" type="file" accept="video/*" class="field" style="display:none"><div id="selectedVideo" class="uploadHint">Ningún video seleccionado.</div><input id="postCaption" class="field" maxlength="220" placeholder="Escribe una descripción..."><button id="publishBtn" class="primary">☁️ Publicar video</button><div id="uploadStatus" class="status"></div><div id="uploadProgress" class="progressWrap hidden"><div id="uploadProgressBar" class="progressBar"></div></div></div></section>
+<section id="activity" class="panel"><h2>Actividad</h2><div class="card">Todavía no tienes notificaciones.</div></section>
+<section id="profile" class="panel"><h2 id="profileName">@usuario</h2><div class="card"><div id="profileEmail"></div><p class="profileCount" id="profileVideoCount">0 videos</p></div><h3>Videos</h3><div id="profileVideos" class="profileVideos"><div class="emptyFeed profileEmpty">Cargando videos…</div></div><button id="logout" class="secondary">Cerrar sesión</button></section>
+
+<div id="profileViewer" class="profileViewer" aria-hidden="true"><button class="profileViewerClose" onclick="closeProfileVideo()">×</button><video id="profileViewerVideo" playsinline loop></video><div class="profileViewerInfo"><div id="profileViewerUser" class="profileViewerUser"></div><div id="profileViewerCaption" class="profileViewerCaption"></div><div id="profileViewerViews" class="profileViewerCaption">👁 0 vistas</div></div><div class="profileViewerActions"><div class="profileViewerActionGroup"><button id="profileViewerLike" class="profileViewerAction" type="button">♡</button><span id="profileViewerLikeCount" class="profileViewerCount">0</span></div><div class="profileViewerActionGroup"><button id="profileViewerComment" class="profileViewerAction" type="button">💬</button><span id="profileViewerCommentCount" class="profileViewerCount">0</span></div><div class="profileViewerActionGroup"><button id="profileViewerShare" class="profileViewerAction" type="button">↗</button><span class="profileViewerShareLabel">Compartir</span></div></div></div><div id="shareMenu" class="shareMenu" aria-hidden="true"><div class="shareMenuCard" onclick="event.stopPropagation()"><div class="shareMenuTitle">Compartir video</div><div class="shareOptions"><button class="shareOption" onclick="shareToPlatform('whatsapp')"><span class="shareOptionIcon">💬</span>WhatsApp</button><button class="shareOption" onclick="shareToPlatform('telegram')"><span class="shareOptionIcon">✈️</span>Telegram</button><button class="shareOption" onclick="shareToPlatform('facebook')"><span class="shareOptionIcon">f</span>Facebook</button><button class="shareOption" onclick="shareToPlatform('x')"><span class="shareOptionIcon">𝕏</span>X</button><button class="shareOption" onclick="shareToPlatform('copy')"><span class="shareOptionIcon">🔗</span>Copiar enlace</button><button class="shareOption" onclick="shareToPlatform('more')"><span class="shareOptionIcon">📤</span>Más</button></div><button class="shareClose" onclick="closeShareMenu()">Cancelar</button></div></div>
+<div id="commentBox" class="commentBox">
+<button class="closeComments" onclick="closeComments()">×</button><h3>Comentarios</h3><div id="comments" class="comments"></div>
+<div class="commentForm"><input id="commentInput" class="field" placeholder="Añade un comentario…"><button class="primary" onclick="addComment()">Enviar</button></div>
+</div>
+<nav>
+<button class="active" onclick="show('home',this)"><b>⌂</b>Inicio</button>
+
+<button onclick="show('create',this)"><b>＋</b>Crear</button>
+<button onclick="show('activity',this)"><b>♡</b>Actividad</button>
+<button onclick="show('profile',this)"><b>◎</b>Perfil</button>
+</nav>
+</div>
+
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+import {getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,onAuthStateChanged,signOut,RecaptchaVerifier,signInWithPhoneNumber} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+import {getFirestore,doc,setDoc,getDoc,updateDoc,serverTimestamp,arrayUnion,arrayRemove,increment,collection,getDocs,query,orderBy,limit,where,deleteDoc} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+import {getFunctions,httpsCallable} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-functions.js";
+
+const config={
+apiKey:"AIzaSyDfoqCBI1xUNbhUktQ-5uvnT_swlxWXKuI",
+authDomain:"vyro-d3720.firebaseapp.com",
+projectId:"vyro-d3720",
+storageBucket:"vyro-d3720.firebasestorage.app",
+messagingSenderId:"481070105697",
+appId:"1:481070105697:web:f660841d92b2a3b972d620",
+measurementId:"G-FD28PDXZG8"
+};
+const app=initializeApp(config),auth=getAuth(app),db=getFirestore(app),functions=getFunctions(app);
+const deleteVideoCallable=httpsCallable(functions,"deleteVideo");
+window.vyroDb=db;window.vyroDeleteDoc=deleteDoc;window.vyroGetDoc=getDoc;window.vyroSetDoc=setDoc;window.vyroUpdateDoc=updateDoc;window.vyroArrayUnion=arrayUnion;window.vyroArrayRemove=arrayRemove;window.vyroIncrement=increment;window.vyroDoc=doc;window.vyroCollection=collection;window.vyroServerTimestamp=serverTimestamp;window.vyroGetDocs=getDocs;window.vyroQuery=query;window.vyroOrderBy=orderBy;window.vyroLimit=limit;window.vyroWhere=where;
+const $=id=>document.getElementById(id);
+function status(t){$("status").textContent=t}
+function err(e){
+ const m={
+  "auth/invalid-email":"Correo no válido.",
+  "auth/email-already-in-use":"Ese correo ya está registrado.",
+  "auth/weak-password":"La contraseña debe tener al menos 6 caracteres.",
+  "auth/invalid-credential":"Correo o contraseña incorrectos.",
+  "auth/popup-closed-by-user":"Inicio de sesión cancelado.",
+  "auth/unauthorized-domain":"Este dominio no está autorizado en Firebase Authentication.",
+  "auth/invalid-api-key":"La API Key de Firebase no es válida.",
+  "auth/invalid-action-code":"La acción de autenticación no es válida.",
+  "auth/network-request-failed":"No hay conexión con Firebase."
+ };
+ const msg=m[e?.code]||("Error de Firebase: "+(e?.code||"desconocido")+" — "+(e?.message||"sin detalles"));
+ status(msg);
+ console.error("VYRO AUTH ERROR",e?.code,e?.message,e);
+}
+
+$("registerBtn").onclick=async()=>{
+ const email=$("email").value.trim().toLowerCase(),pass=$("password").value,user=$("username").value.trim();
+ if(!email||!pass||!user){status("Completa correo, contraseña y usuario.");return}
+ if(user.length<3){status("El nombre de usuario debe tener al menos 3 caracteres.");return}
+ if(!/^[a-zA-Z0-9_]+$/.test(user)){status("El usuario solo puede usar letras, números y _.");return}
+ if(pass.length<6){status("La contraseña debe tener al menos 6 caracteres.");return}
+ try{
+   status("Creando cuenta...");
+   const c=await createUserWithEmailAndPassword(auth,email,pass);
+   await setDoc(doc(db,"users",c.user.uid),{
+     uid:c.user.uid,
+     username:user,
+     email,
+     createdAt:window.vyroServerTimestamp(),
+     followersCount:0,
+     followingCount:0
+   });
+   status("✅ Cuenta creada. Bienvenido a VYRO.");
+ }catch(e){err(e)}
+};
+$("loginBtn").onclick=async()=>{
+const email=$("email").value.trim(),pass=$("password").value;
+if(!email||!pass){status("Escribe correo y contraseña.");return}
+try{status("Iniciando sesión...");await signInWithEmailAndPassword(auth,email,pass)}catch(e){err(e)}
+};
+
+$("logout").onclick=()=>signOut(auth);
+onAuthStateChanged(auth,async user=>{
+window.firebaseAuthUser=user||null;
+if(!user){$("auth").classList.remove("hidden");return}
+// Ocultar el login inmediatamente después de autenticar.
+// Así un error de Firestore no deja la pantalla atascada en "Iniciando sesión...".
+$("auth").classList.add("hidden");
+$("profileEmail").textContent=user.email||user.phoneNumber||"";
+try{
+  const s=await getDoc(doc(db,"users",user.uid));
+  if(s.exists()){
+    const name=s.data().username||"usuario";
+    $("profileName").textContent="@"+name;
+    window.vyroUsername=name;
+  }else{
+    const fallback=(user.displayName||"usuario").replace(/\s+/g,"_").replace(/[^a-zA-Z0-9_]/g,"").slice(0,20)||"usuario";
+    try{await setDoc(doc(db,"users",user.uid),{uid:user.uid,username:fallback,email:user.email||"",phoneNumber:user.phoneNumber||"",displayName:user.displayName||"",photoURL:user.photoURL||"",createdAt:window.vyroServerTimestamp(),followersCount:0,followingCount:0},{merge:true});}catch(saveErr){console.warn("No se pudo guardar el perfil:",saveErr);}
+    $("profileName").textContent="@"+fallback;
+    window.vyroUsername=fallback;
+  }
+}catch(profileErr){
+  console.warn("No se pudo leer el perfil de Firestore:",profileErr);
+  const fallback=(user.displayName||"usuario").replace(/\s+/g,"_").replace(/[^a-zA-Z0-9_]/g,"").slice(0,20)||"usuario";
+  $("profileName").textContent="@"+fallback;
+  window.vyroUsername=fallback;
+}
+loadProfileVideos();
+});
+</script>
+<script>
+let currentComments=[];
+const demoVideos=[
+ {videoUrl:"https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",username:"vyro",caption:"Bienvenido a VYRO 🚀",likes:0,comments:[]},
+ {videoUrl:"https://storage.googleapis.com/coverr-main/mp4/Mt_Baker.mp4",username:"creator",caption:"Tu próximo video puede aparecer aquí.",likes:0,comments:[]}
+];
+
+function show(id,b){document.querySelectorAll(".panel").forEach(x=>x.classList.remove("active"));document.getElementById(id).classList.add("active");document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));if(b)b.classList.add("active");if(id==='home')document.querySelectorAll('#feed video').forEach(v=>v.play().catch(()=>{}));if(id==='profile')loadProfileVideos()}
+async function like(b){const wrap=b.closest('.video'),id=wrap?.dataset.postId,user=window.firebaseAuthUser,c=b.nextElementSibling,wasLiked=b.classList.contains('liked');if(!id||id.startsWith('demo-')||!user){b.classList.toggle('liked');b.textContent=b.classList.contains('liked')?'♥':'♡';c.textContent=Math.max(0,(+c.textContent)+(b.classList.contains('liked')?1:-1));return}b.disabled=true;try{await window.vyroUpdateDoc(window.vyroDoc(window.vyroDb,'videos',id),{likedBy:wasLiked?window.vyroArrayRemove(user.uid):window.vyroArrayUnion(user.uid),likes:window.vyroIncrement(wasLiked?-1:1)});b.classList.toggle('liked',!wasLiked);b.textContent=!wasLiked?'♥':'♡';c.textContent=Math.max(0,(+c.textContent)+(!wasLiked?1:-1))}catch(e){console.error(e);alert('No se pudo guardar el like. Revisa las reglas de Firestore.')}finally{b.disabled=false}}
+async function loadLikeState(postId,button,count){const user=window.firebaseAuthUser;if(!user||!postId||postId.startsWith('demo-'))return;try{const snap=await window.vyroGetDoc(window.vyroDoc(window.vyroDb,'videos',postId));if(!snap.exists())return;const data=snap.data()||{},liked=Array.isArray(data.likedBy)&&data.likedBy.includes(user.uid);button.classList.toggle('liked',liked);button.textContent=liked?'♥':'♡';count.textContent=Number(data.likes||0)}catch(e){console.warn('No se pudo cargar el estado del like:',e)}}
+function toggleSound(b){const v=b.closest('.video').querySelector('video');v.muted=!v.muted;b.textContent=v.muted?'🔇':'🔊'}
+function getShareData(source){let url=location.href,text='Mira este video en VYRO';if(source&&typeof source==='object'){if(source.videoUrl||source.url)url=source.videoUrl||source.url;if(source.username)text='Mira este video de @'+source.username+' en VYRO';else if(source.querySelector){const v=source.querySelector('video');if(v&&v.currentSrc)url=v.currentSrc}}return {url,text}}
+let pendingShareData=null;
+function shareVideo(post){pendingShareData=getShareData(post);openShareMenu()}
+function openShareMenu(){const m=document.getElementById('shareMenu');if(!m)return;m.classList.add('open');m.setAttribute('aria-hidden','false')}
+function closeShareMenu(){const m=document.getElementById('shareMenu');if(!m)return;m.classList.remove('open');m.setAttribute('aria-hidden','true')}
+function shareToPlatform(platform){const data=pendingShareData||getShareData(null),url=encodeURIComponent(data.url),text=encodeURIComponent(data.text+' '+data.url);let target='';if(platform==='whatsapp')target='https://wa.me/?text='+text;else if(platform==='telegram')target='https://t.me/share/url?url='+url+'&text='+encodeURIComponent(data.text);else if(platform==='facebook')target='https://www.facebook.com/sharer/sharer.php?u='+url;else if(platform==='x')target='https://twitter.com/intent/tweet?text='+encodeURIComponent(data.text)+'&url='+url;else if(platform==='copy'){if(navigator.clipboard)navigator.clipboard.writeText(data.url).then(()=>alert('Enlace copiado.'));else prompt('Copia este enlace:',data.url);closeShareMenu();return}else if(platform==='more'){if(navigator.share)navigator.share({title:'VYRO',text:data.text,url:data.url}).catch(()=>{});else target='mailto:?subject='+encodeURIComponent('Video de VYRO')+'&body='+text}if(target)window.open(target,'_blank','noopener,noreferrer');closeShareMenu()}
+document.getElementById('shareMenu').addEventListener('click',e=>{if(e.target.id==='shareMenu')closeShareMenu()})
+function openComments(post){currentComments=post.comments||[];const box=document.getElementById('commentBox');box.dataset.post=post.id||'';renderComments();box.classList.add('open')}
+function closeComments(){document.getElementById('commentBox').classList.remove('open')}
+function renderComments(){const c=document.getElementById('comments');c.innerHTML=currentComments.length?currentComments.map(x=>`<div class="comment"><b>@${escapeHtml(x.username||'usuario')}</b><br>${escapeHtml(x.text||'')}</div>`).join(''):'<div class="emptyFeed">Sé el primero en comentar.</div>'}
+function addComment(){const input=document.getElementById('commentInput');const text=input.value.trim();if(!text)return;currentComments.push({username:window.vyroUsername||'usuario',text});if(currentProfilePost){currentProfilePost.comments=currentComments;const n=document.getElementById('profileViewerCommentCount');if(n)n.textContent=currentComments.length}input.value='';renderComments()}
+function escapeHtml(s){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+function makePost(post,index){const wrap=document.createElement('article');wrap.className='video';const id=post.id||('demo-'+index);wrap.dataset.postId=id;wrap.innerHTML=`<video playsinline muted loop preload="metadata" src="${escapeHtml(post.videoUrl||post.url||'')}"></video><button class="sound" onclick="toggleSound(this)">🔇</button><div class="info"><div class="user">@${escapeHtml(post.username||'usuario')}</div><div class="caption">${escapeHtml(post.caption||post.description||'')}</div></div><div class="actions"><button class="action" onclick="like(this)">♡</button><span class="count">${Number(post.likes||0)}</span><button class="action" onclick='openComments(${JSON.stringify({id,comments:post.comments||[]}).replace(/'/g,"&#39;")})'>💬</button><span class="count">${(post.comments||[]).length}</span><button class="action" onclick="shareVideo(this.closest('.video'))">↗</button></div>`;const likeBtn=wrap.querySelector('.action'),likeCount=likeBtn.nextElementSibling;loadLikeState(id,likeBtn,likeCount);const video=wrap.querySelector('video');video.addEventListener('click',e=>{e.stopPropagation();if(video.paused)video.play().catch(()=>{});else video.pause()});return wrap}
+
+
+async function focusSearch(){show("search",null);setTimeout(()=>document.getElementById("searchInput")?.focus(),50)}
+let searchTimer=null;
+async function runSearch(){const input=document.getElementById("searchInput"),box=document.getElementById("searchResults");const term=(input?.value||"").trim().toLowerCase();if(!term){box.innerHTML="Escribe para buscar usuarios o videos.";return}box.innerHTML="Buscando…";try{const [usersSnap,videosSnap]=await Promise.all([window.vyroGetDocs(window.vyroQuery(window.vyroCollection(window.vyroDb,"users"),window.vyroLimit(50))),window.vyroGetDocs(window.vyroQuery(window.vyroCollection(window.vyroDb,"videos"),window.vyroOrderBy("createdAt","desc"),window.vyroLimit(50)))]);const users=[];usersSnap.forEach(d=>{const x=d.data()||{};if(String(x.username||"").toLowerCase().includes(term))users.push({id:d.id,...x})});const videos=[];videosSnap.forEach(d=>{const x=d.data()||{};if(String(x.username||"").toLowerCase().includes(term)||String(x.caption||x.description||"").toLowerCase().includes(term))videos.push({id:d.id,...x})});let html="";if(users.length)html+='<h3>Usuarios</h3>'+users.slice(0,20).map(u=>`<div class="card" style="margin-top:8px;cursor:pointer" onclick="showProfileFromSearch('${escapeHtml(u.id)}')">👤 <b>@${escapeHtml(u.username||"usuario")}</b></div>`).join("");if(videos.length)html+='<h3>Videos</h3>'+videos.slice(0,20).map((v,i)=>`<div class="card" style="margin-top:8px;cursor:pointer" onclick='openSearchVideo(${JSON.stringify(v).replace(/'/g,"&#39;")})'>🎬 <b>@${escapeHtml(v.username||"usuario")}</b><div style="color:#aaa;margin-top:4px">${escapeHtml(v.caption||v.description||"")}</div></div>`).join("");if(!html)html='<div class="emptyFeed">No encontramos resultados para “'+escapeHtml(term)+'”.</div>';box.innerHTML=html}catch(e){console.error(e);box.innerHTML="No se pudo realizar la búsqueda."}}
+function showProfileFromSearch(uid){const user=window.firebaseAuthUser;if(user&&uid===user.uid){show("profile",document.querySelectorAll("nav button")[4]);return}alert("Perfil encontrado. La vista de perfiles de otros usuarios se puede conectar en el siguiente paso.")}
+function openSearchVideo(post){currentProfilePost=post;openProfileVideo(post)}
+document.addEventListener("DOMContentLoaded",()=>{const input=document.getElementById("searchInput");if(input)input.addEventListener("input",()=>{clearTimeout(searchTimer);searchTimer=setTimeout(runSearch,250)})});
+function timeValue(t){if(!t)return 0;if(typeof t.toMillis==='function')return t.toMillis();if(typeof t.seconds==='number')return t.seconds*1000+(Number(t.nanoseconds)||0)/1e6;if(t instanceof Date)return t.getTime();const n=Date.parse(t);return Number.isFinite(n)?n:0}
+let currentProfilePost=null;
+async function likeProfileVideo(button,count){const post=currentProfilePost,user=window.firebaseAuthUser;if(!post)return;const id=post.id,wasLiked=button.classList.contains('liked');if(!id||id.startsWith('demo-')||!user){button.classList.toggle('liked');button.textContent=button.classList.contains('liked')?'♥':'♡';count.textContent=Math.max(0,(+count.textContent)+(button.classList.contains('liked')?1:-1));post.likes=Number(count.textContent)||0;return}button.disabled=true;try{await window.vyroUpdateDoc(window.vyroDoc(window.vyroDb,'videos',id),{likedBy:wasLiked?window.vyroArrayRemove(user.uid):window.vyroArrayUnion(user.uid),likes:window.vyroIncrement(wasLiked?-1:1)});button.classList.toggle('liked',!wasLiked);button.textContent=!wasLiked?'♥':'♡';count.textContent=Math.max(0,(+count.textContent)+(!wasLiked?1:-1));post.likes=Number(count.textContent)||0}catch(e){console.error(e);alert('No se pudo guardar el like. Revisa las reglas de Firestore.')}finally{button.disabled=false}}
+async function loadProfileLikeState(postId,button,count){const user=window.firebaseAuthUser;if(!user||!postId||postId.startsWith('demo-'))return;try{const snap=await window.vyroGetDoc(window.vyroDoc(window.vyroDb,'videos',postId));if(!snap.exists())return;const data=snap.data()||{},liked=Array.isArray(data.likedBy)&&data.likedBy.includes(user.uid);button.classList.toggle('liked',liked);button.textContent=liked?'♥':'♡';count.textContent=Number(data.likes||0)}catch(e){console.warn('No se pudo cargar el like del perfil:',e)}}
+async function registerProfileView(post){const viewEl=document.getElementById('profileViewerViews');const currentUser=window.firebaseAuthUser;if(!post||!post.id||String(post.id).startsWith('demo-')){const local=Number(post?.views||0);if(viewEl)viewEl.textContent=`👁 ${local} ${local===1?'vista':'vistas'}`;return local}const local=Number(post.views||0);if(viewEl)viewEl.textContent=`👁 ${local} ${local===1?'vista':'vistas'}`;if(!currentUser)return local;const isOwner=currentUser.uid===post.uid;try{if(isOwner){if(post.ownerViewCounted===true)return local;await window.vyroUpdateDoc(window.vyroDoc(window.vyroDb,'videos',post.id),{views:window.vyroIncrement(1),ownerViewCounted:true});post.views=local+1;post.ownerViewCounted=true}else{await window.vyroUpdateDoc(window.vyroDoc(window.vyroDb,'videos',post.id),{views:window.vyroIncrement(1)});post.views=local+1}const n=post.views;if(viewEl)viewEl.textContent=`👁 ${n} ${n===1?'vista':'vistas'}`;const card=document.querySelector(`[data-profile-video-id="${CSS.escape(String(post.id))}"] .viewCount`);if(card)card.textContent=`👁 ${n}`;return n}catch(e){console.warn('No se pudo guardar la vista:',e);return local}}
+function toggleProfileVideoMenu(e,id){e.preventDefault();e.stopPropagation();document.querySelectorAll('.profileVideoMenu.open').forEach(m=>m.classList.remove('open'));const menu=document.querySelector(`[data-profile-menu-id="${CSS.escape(String(id))}"]`);if(menu)menu.classList.toggle('open')}
+async function deleteProfileVideo(e,id){e.preventDefault();e.stopPropagation();const user=window.firebaseAuthUser;if(!user||!id)return;const menu=document.querySelector(`[data-profile-menu-id="${CSS.escape(String(id))}"]`);if(menu)menu.classList.remove("open");const item=document.querySelector(`[data-profile-video-id="${CSS.escape(String(id))}"]`);if(!confirm('¿Eliminar este video de VYRO? Se borrará de VYRO y de Cloudinary. Esta acción no se puede deshacer.'))return;try{if(item)item.style.opacity=".5";await deleteVideoCallable({videoId:id});if(currentProfilePost&&String(currentProfilePost.id)===String(id))closeProfileVideo();if(item)item.remove();const count=document.getElementById('profileVideoCount');const remaining=document.querySelectorAll('#profileVideos .profileVideo').length;count.textContent=`${remaining} ${remaining===1?'video':'videos'}`;if(!remaining)document.getElementById('profileVideos').innerHTML='<div class="emptyFeed profileEmpty">Todavía no has publicado videos.</div>';}catch(err){console.error(err);if(item)item.style.opacity="1";alert(err?.message||'No se pudo eliminar el video. Asegúrate de haber desplegado la función deleteVideo en Firebase.')}}
+document.addEventListener('click',e=>{if(!e.target.closest('.profileVideoMenu')&&!e.target.closest('.profileVideoMenuBtn'))document.querySelectorAll('.profileVideoMenu.open').forEach(m=>m.classList.remove('open'))})
+function openProfileVideo(post){const viewer=document.getElementById('profileViewer'),video=document.getElementById('profileViewerVideo'),likeBtn=document.getElementById('profileViewerLike'),likeCount=document.getElementById('profileViewerLikeCount'),commentCount=document.getElementById('profileViewerCommentCount');const url=post.videoUrl||post.url||'';if(!url)return;currentProfilePost=post;video.pause();video.removeAttribute('src');video.load();video.src=url;video.load();document.getElementById('profileViewerUser').textContent='@'+(post.username||'usuario');document.getElementById('profileViewerCaption').textContent=post.caption||post.description||'';const initialViews=Number(post.views||0);document.getElementById('profileViewerViews').textContent=`👁 ${initialViews} ${initialViews===1?'vista':'vistas'}`;likeCount.textContent=Number(post.likes||0);commentCount.textContent=(post.comments||[]).length;likeBtn.classList.remove('liked');likeBtn.textContent='♡';loadProfileLikeState(post.id,likeBtn,likeCount);viewer.classList.add('open');viewer.setAttribute('aria-hidden','false');registerProfileView(post);video.play().catch(()=>{});video.onclick=()=>{if(video.paused)video.play().catch(()=>{});else video.pause()};likeBtn.onclick=()=>likeProfileVideo(likeBtn,likeCount);document.getElementById('profileViewerComment').onclick=()=>{if(currentProfilePost)openComments(currentProfilePost)};document.getElementById('profileViewerShare').onclick=()=>{if(currentProfilePost)shareVideo(currentProfilePost)}}
+
+function closeProfileVideo(){const viewer=document.getElementById('profileViewer'),video=document.getElementById('profileViewerVideo');video.pause();video.removeAttribute('src');video.load();viewer.classList.remove('open');viewer.setAttribute('aria-hidden','true');currentProfilePost=null}
+document.getElementById('profileViewer').addEventListener('click',e=>{if(e.target.id==='profileViewer')closeProfileVideo()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('profileViewer').classList.contains('open'))closeProfileVideo()});
+async function loadProfileVideos(){const box=document.getElementById('profileVideos'),count=document.getElementById('profileVideoCount'),user=window.firebaseAuthUser;if(!user){box.innerHTML='<div class="emptyFeed profileEmpty">Inicia sesión para ver tus videos.</div>';count.textContent='0 videos';return}box.innerHTML='<div class="loading profileEmpty">Cargando videos…</div>';try{const snap=await window.vyroGetDocs(window.vyroQuery(window.vyroCollection(window.vyroDb,'videos'),window.vyroWhere('uid','==',user.uid)));const posts=[];snap.forEach(d=>posts.push({id:d.id,...d.data()}));posts.sort((a,b)=>timeValue(b.createdAt)-timeValue(a.createdAt));count.textContent=`${posts.length} ${posts.length===1?'video':'videos'}`;if(!posts.length){box.innerHTML='<div class="emptyFeed profileEmpty">Todavía no has publicado videos.</div>';return}box.innerHTML='';posts.forEach(post=>{const item=document.createElement('div');item.className='profileVideo';item.dataset.profileVideoId=post.id||'';const views=Number(post.views||0);item.innerHTML=`<video src="${escapeHtml(post.videoUrl||post.url||'')}" muted playsinline preload="metadata"></video><span class="playState">▶</span><span class="viewCount right">👁 ${views}</span><button class="profileVideoMenuBtn" type="button" aria-label="Opciones" onclick="toggleProfileVideoMenu(event,'${escapeHtml(post.id||'')}')">⋮</button><div class="profileVideoMenu" data-profile-menu-id="${escapeHtml(post.id||'')}"><button class="profileVideoDelete" type="button" onclick="deleteProfileVideo(event,'${escapeHtml(post.id||'')}')">🗑️ Eliminar video</button></div>`;const v=item.querySelector('video'),state=item.querySelector('.playState');item.addEventListener('click',()=>openProfileVideo(post));v.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();openProfileVideo(post)});box.appendChild(item)})}catch(e){console.error(e);box.innerHTML='<div class="emptyFeed profileEmpty">No se pudieron cargar los videos.</div>';count.textContent='0 videos'}}
+
+async function loadFeed(){const feed=document.getElementById('feed');feed.innerHTML='<div class="loading">Cargando VYRO…</div>';let posts=[];try{const snap=await window.vyroGetDocs(window.vyroQuery(window.vyroCollection(window.vyroDb,'videos'),window.vyroOrderBy('createdAt','desc'),window.vyroLimit(20)));snap.forEach(d=>posts.push({id:d.id,...d.data()}))}catch(e){console.warn('No se pudieron cargar videos de Firestore:',e)}if(!posts.length)posts=demoVideos;feed.innerHTML='';posts.forEach((p,i)=>feed.appendChild(makePost(p,i)));setupObserver()}
+function setupObserver(){const obs=new IntersectionObserver(entries=>entries.forEach(e=>{const v=e.target.querySelector('video');if(!v)return;if(e.isIntersecting){v.play().catch(()=>{});document.querySelectorAll('#feed video').forEach(x=>{if(x!==v)x.pause()})}else v.pause()}),{threshold:.7});document.querySelectorAll('#feed .video').forEach(p=>obs.observe(p))}
+
+const CLOUDINARY_CLOUD_NAME="htnuvtl1"; const CLOUDINARY_UPLOAD_PRESET="vyro_upload"; const CLOUDINARY_UPLOAD_URL=`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`; const fileInput=document.getElementById("videoFile"), selectedVideo=document.getElementById("selectedVideo"), captionInput=document.getElementById("postCaption"), publishBtn=document.getElementById("publishBtn"), uploadStatus=document.getElementById("uploadStatus"), progress=document.getElementById("uploadProgress"), bar=document.getElementById("uploadProgressBar"); fileInput.onchange=()=>{const f=fileInput.files[0];selectedVideo.textContent=f?`${f.name} · ${(f.size/1048576).toFixed(1)} MB`:"Ningún video seleccionado."}; publishBtn.onclick=async()=>{const file=fileInput.files[0],user=window.firebaseAuthUser;if(!file)return uploadStatus.textContent="Selecciona un video primero.";if(!user)return uploadStatus.textContent="Inicia sesión para publicar.";publishBtn.disabled=true;publishBtn.textContent="Subiendo…";progress.classList.remove("hidden");uploadStatus.textContent="Subiendo video a Cloudinary…";try{const data=await new Promise((res,rej)=>{const x=new XMLHttpRequest();x.open("POST",CLOUDINARY_UPLOAD_URL);x.responseType="json";x.upload.onprogress=e=>{if(e.lengthComputable)bar.style.width=Math.round(e.loaded/e.total*100)+"%"};x.onload=()=>x.status>=200&&x.status<300&&x.response.secure_url?res(x.response):rej(new Error(x.response?.error?.message||"Error de Cloudinary"));x.onerror=()=>rej(new Error("No se pudo conectar con Cloudinary."));const fd=new FormData();fd.append("file",file);fd.append("upload_preset",CLOUDINARY_UPLOAD_PRESET);x.send(fd)});uploadStatus.textContent="Guardando publicación…";const ps=await window.vyroGetDoc(window.vyroDoc(window.vyroDb,"users",user.uid)),profile=ps.exists()?ps.data():{};const postRef=window.vyroDoc(window.vyroCollection(window.vyroDb,"videos"));const newPost={uid:user.uid,username:profile.username||window.vyroUsername||"usuario",caption:captionInput.value.trim(),videoUrl:data.secure_url,publicId:data.public_id||null,likes:0,comments:[],views:0,createdAt:window.vyroServerTimestamp()};await window.vyroSetDoc(postRef,newPost);uploadStatus.textContent="✅ Publicado correctamente.";fileInput.value="";captionInput.value="";selectedVideo.textContent="Ningún video seleccionado.";const feed=document.getElementById("feed");const empty=feed.querySelector(".emptyFeed,.loading");if(empty)empty.remove();feed.insertBefore(makePost({...newPost,id:postRef.id,createdAt:new Date()},0),feed.firstChild);setupObserver();loadProfileVideos();show("home",document.querySelector("nav button"));setTimeout(()=>document.querySelector("#feed .video")?.scrollIntoView({behavior:"smooth",block:"start"}),50)}catch(e){console.error(e);uploadStatus.textContent="❌ "+e.message}finally{publishBtn.disabled=false;publishBtn.textContent="☁️ Publicar video"}};
+
+loadFeed();
+
+// VYRO — Inicio de sesión con número de teléfono
+let confirmationResult = null;
+
+const phoneInput = document.getElementById("phone");
+const smsCodeInput = document.getElementById("smsCode");
+const sendCodeBtn = document.getElementById("sendCode");
+const verifyCodeBtn = document.getElementById("verifyCode");
+const recaptchaBox = document.getElementById("recaptcha-container");
+
+function showPhoneStatus(message) {
+  const status = document.getElementById("status");
+  if (status) status.textContent = message;
+}
+
+let recaptchaVerifier = null;
+
+function setupRecaptcha() {
+  if (recaptchaVerifier) return;
+  recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", {
+    size: "invisible",
+    callback: () => {}
+  });
+}
+
+if (sendCodeBtn) {
+  sendCodeBtn.addEventListener("click", async () => {
+    const phone = phoneInput.value.trim();
+
+    if (!/^\+\d{8,15}$/.test(phone)) {
+      showPhoneStatus("Escribe el número con código de país. Ejemplo: +18095551234");
+      return;
+    }
+
+    try {
+      setupRecaptcha();
+      showPhoneStatus("Enviando código SMS...");
+      confirmationResult = await signInWithPhoneNumber(auth, phone, recaptchaVerifier);
+
+      smsCodeInput.style.display = "";
+      verifyCodeBtn.style.display = "";
+      sendCodeBtn.style.display = "none";
+      showPhoneStatus("Código enviado. Revisa tus SMS.");
+    } catch (error) {
+      console.error(error);
+      showPhoneStatus("No se pudo enviar el SMS: " + (error.message || "error de autenticación"));
+      if (recaptchaVerifier) {
+        try { recaptchaVerifier.clear(); } catch(e) {}
+        recaptchaVerifier = null;
+      }
+    }
+  });
+}
+
+if (verifyCodeBtn) {
+  verifyCodeBtn.addEventListener("click", async () => {
+    const code = smsCodeInput.value.trim();
+
+    if (!confirmationResult) {
+      showPhoneStatus("Primero solicita el código SMS.");
+      return;
+    }
+    if (!/^\d{6}$/.test(code)) {
+      showPhoneStatus("Escribe el código de 6 dígitos.");
+      return;
+    }
+
+    try {
+      showPhoneStatus("Verificando...");
+      const result = await confirmationResult.confirm(code);
+      const user = result.user;
+
+      // Crea el perfil de VYRO si es la primera vez.
+      const ref = doc(db, "users", user.uid);
+      const snap = await getDoc(ref);
+      if (!snap.exists()) {
+        await setDoc(ref, {
+          username: "usuario" + (user.phoneNumber || "").replace(/\D/g, "").slice(-6),
+          phoneNumber: user.phoneNumber || "",
+          provider: "phone",
+          createdAt: serverTimestamp(),
+          followersCount: 0,
+          followingCount: 0
+        });
+      }
+
+      showPhoneStatus("¡Cuenta creada/iniciada correctamente!");
+    } catch (error) {
+      console.error(error);
+      showPhoneStatus("Código incorrecto o expirado.");
+    }
+  });
+}
+</script>
+</body>
+</html>
