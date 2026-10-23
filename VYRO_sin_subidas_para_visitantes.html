@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#09090d">
+<title>VYRO | Streaming</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#09090d;color:#fff;font-family:Arial,sans-serif}
+header{padding:20px 5%;display:flex;align-items:center;gap:20px;flex-wrap:wrap;background:#14141c;border-bottom:1px solid #292936}
+.logo{font-size:30px;font-weight:900;color:#a78bfa}
+nav{display:flex;gap:16px;flex-wrap:wrap}nav a{color:#fff;text-decoration:none}
+input{padding:12px;border-radius:8px;background:#22222d;color:#fff;border:1px solid #444;flex:1;min-width:180px}
+.hero{padding:55px 6%;background:linear-gradient(110deg,#40235b,#101019)}.hero h1{font-size:clamp(36px,6vw,58px)}.hero p{color:#d1cddd}
+button{padding:11px 16px;border:0;border-radius:8px;background:#8b5cf6;color:#fff;cursor:pointer}
+main{padding:25px 5%}.filters{display:flex;gap:10px;flex-wrap:wrap;margin:20px 0}.filters button{background:#292936}.filters .active{background:#8b5cf6}
+.catalogo{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:18px}
+.card{background:#191922;border:1px solid #292936;border-radius:10px;overflow:hidden}
+.card img{width:100%;aspect-ratio:2/3;object-fit:cover;display:block;background:#252035}
+.clasico-card{padding:0;text-align:left;background:#191922;border:1px solid #292936;border-radius:10px;overflow:hidden;color:#fff;cursor:pointer;width:100%}.clasico-art{aspect-ratio:2/3;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;text-align:center;background:linear-gradient(145deg,#34214f,#15151d)}.clasico-art strong{font-size:22px;color:#c4b5fd}.clasico-art span{font-size:13px;color:#eee;margin-top:10px}.clasico-label{padding:12px;font-weight:bold}.info{padding:12px}.info h3{font-size:16px;margin:4px 0 10px}.info p{font-size:13px;color:#bbb;line-height:1.45}.info .sinopsis{min-height:55px}.info button{width:100%}
+#estado{color:#bbb}footer{padding:25px 5%;color:#999}
+@media(max-width:500px){header{gap:14px}.logo{width:100%}.catalogo{grid-template-columns:repeat(2,minmax(0,1fr))}#modal-detalles>div{grid-template-columns:1fr!important}#modal-detalles img{max-width:180px;margin:auto}}
+</style>
+</head>
+<body>
+<header><div class="logo">VYRO</div><nav><a href="#inicio">Inicio</a><a href="#catalogo">Catálogo</a></nav><input id="buscar" type="search" placeholder="Buscar películas, series o anime..." aria-label="Buscar catálogo"></header>
+<section class="hero" id="inicio"><p>BIENVENIDO A VYRO</p><h1>Historias que<br>te atrapan.</h1><p>Películas, series y anime en un solo lugar.</p><button type="button" onclick="document.getElementById('catalogo').scrollIntoView({behavior:'smooth'})">Explorar catálogo</button></section>
+<main id="catalogo"><h2>Descubre contenido</h2><div class="filters"><button type="button" class="active" data-tipo="Todos">Todo</button><button type="button" data-tipo="Película">Películas</button><button type="button" data-tipo="Serie">Series</button><button type="button" data-tipo="Anime">Anime</button></div><p id="estado" aria-live="polite"></p><div class="catalogo" id="resultados"></div></main>
+<footer>VYRO © 2026 · Catálogo informativo.<p style="font-size:12px;line-height:1.5;max-width:850px">Este producto utiliza la API de TMDB, pero TMDB no lo respalda ni certifica. Los datos y pósteres proceden de The Movie Database (TMDB).</p><a href="https://www.themoviedb.org/" target="_blank" rel="noopener noreferrer" style="color:#a78bfa">The Movie Database (TMDB)</a></footer>
+<script>
+const TMDB_KEY_STORAGE = "vyro_tmdb_api_key";
+const IMAGE_BASE = "https://image.tmdb.org/t/p/w500";
+let filtro = "Todos";
+let pagina = 1;
+let consultaActual = "";
+let cargando = false;
+
+const resultados = document.getElementById("resultados");
+const buscar = document.getElementById("buscar");
+const estado = document.getElementById("estado");
+
+function obtenerClave() {
+  return localStorage.getItem(TMDB_KEY_STORAGE) || "";
+}
+
+function crearConfiguracion() {
+  const panel = document.createElement("section");
+  panel.id = "config-api";
+  panel.style.cssText = "margin:20px 5%;padding:18px;background:#191922;border:1px solid #393344;border-radius:12px";
+  panel.innerHTML = `
+    <h2 style="margin-top:0">Conecta VYRO con TMDB</h2>
+    <p style="color:#c9c5d3;line-height:1.5">Introduce tu API Key (v3) o tu API Read Access Token de TMDB para cargar títulos y pósteres reales. La credencial se guarda solo en este navegador, no dentro del archivo HTML.</p>
+    <form id="form-api" style="display:flex;gap:10px;flex-wrap:wrap">
+      <input id="clave-api" type="password" autocomplete="off" placeholder="API Key v3 o API Read Access Token" aria-label="Credencial de TMDB" style="flex:1;min-width:220px">
+      <button type="submit">Guardar y conectar</button>
+      <button type="button" id="quitar-clave" style="background:#393344">Borrar clave</button>
+    </form>
+    <p id="mensaje-api" style="font-size:13px;color:#c9c5d3;margin-bottom:0"></p>`;
+  const header = document.querySelector("header");
+  header.insertAdjacentElement("afterend", panel);
+
+  document.getElementById("form-api").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const clave = document.getElementById("clave-api").value.trim();
+    const mensaje = document.getElementById("mensaje-api");
+    if (!clave) {
+      mensaje.textContent = "Escribe tu API Key de TMDB.";
+      return;
+    }
+    localStorage.setItem(TMDB_KEY_STORAGE, clave);
+    mensaje.textContent = "Comprobando la clave…";
+    const ok = await probarClave();
+    if (ok) {
+      mensaje.textContent = "Conexión correcta. Cargando catálogo…";
+      await cargarCatalogo(true);
+    } else {
+      localStorage.removeItem(TMDB_KEY_STORAGE);
+      mensaje.textContent = "No se pudo validar. Comprueba que copiaste la credencial completa, sin espacios extra, y que tu cuenta de TMDB está verificada.";
+    }
+  });
+
+  document.getElementById("quitar-clave").addEventListener("click", () => {
+    localStorage.removeItem(TMDB_KEY_STORAGE);
+    document.getElementById("clave-api").value = "";
+    document.getElementById("mensaje-api").textContent = "Clave borrada de este navegador.";
+    resultados.replaceChildren();
+    estado.textContent = "Configura tu API Key de TMDB para mostrar el catálogo.";
+  });
+
+  if (obtenerClave()) {
+    document.getElementById("clave-api").value = obtenerClave();
+    document.getElementById("mensaje-api").textContent = "Hay una clave guardada en este navegador.";
+  }
+}
+
+async function tmdb(ruta, params = {}) {
+  const clave = obtenerClave();
+  if (!clave) throw new Error("Falta la credencial de TMDB.");
+  const url = new URL("https://api.themoviedb.org/3" + ruta);
+  const esTokenLectura = clave.includes(".");
+  if (!esTokenLectura) url.searchParams.set("api_key", clave);
+  url.searchParams.set("language", "es-ES");
+  Object.entries(params).forEach(([k, v]) => {
+    if (v !== undefined && v !== null && v !== "") url.searchParams.set(k, v);
+  });
+  const respuesta = await fetch(url, {
+    headers: esTokenLectura ? { Authorization: "Bearer " + clave, Accept: "application/json" } : { Accept: "application/json" }
+  });
+  if (!respuesta.ok) {
+    if (respuesta.status === 401) throw new Error("TMDB rechazó la credencial. Comprueba que sea la API Key v3 o el API Read Access Token correcto.");
+    throw new Error("TMDB respondió con un error (" + respuesta.status + "). Inténtalo de nuevo.");
+  }
+  return respuesta.json();
+}
+
+async function probarClave() {
+  try {
+    await tmdb("/movie/popular", { page: 1 });
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+function normalizar(item, tipo) {
+  const esSerie = tipo === "tv";
+  const fecha = esSerie ? item.first_air_date : item.release_date;
+  const anio = fecha ? fecha.slice(0, 4) : "Año desconocido";
+  return {
+    id: item.id,
+    tipo: esSerie ? "Serie" : "Película",
+    nombre: item.title || item.name || "Título sin nombre",
+    anio,
+    genero: esSerie ? "Serie de televisión" : "Película",
+    sinopsis: item.overview || "No hay sinopsis disponible en español.",
+    poster: item.poster_path ? IMAGE_BASE + item.poster_path : "",
+    puntuacion: Number.isFinite(item.vote_average) ? item.vote_average.toFixed(1) : "—",
+    original: item
+  };
+}
+
+function tarjetaVacia(texto) {
+  const p = document.createElement("p");
+  p.style.cssText = "color:#bbb;grid-column:1/-1;padding:16px 0";
+  p.textContent = texto;
+  resultados.append(p);
+}
+
+function mostrarTarjetas(lista) {
+  resultados.replaceChildren();
+  if (!lista.length) {
+    tarjetaVacia("No se encontraron títulos con esos criterios.");
+    return;
+  }
+  lista.forEach(t => {
+    const tarjeta = document.createElement("article");
+    tarjeta.className = "card";
+    const img = document.createElement("img");
+    img.alt = t.poster ? "Póster de " + t.nombre : "Póster no disponible para " + t.nombre;
+    img.loading = "lazy";
+    img.style.cursor = "pointer";
+    img.title = "Ver información";
+    img.addEventListener("click", () => abrirDetalles(t));
+    img.src = t.poster || "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="450"><rect width="100%" height="100%" fill="#252035"/><text x="50%" y="48%" fill="#c4b5fd" font-size="20" text-anchor="middle" font-family="Arial">VYRO</text><text x="50%" y="56%" fill="#bbb" font-size="13" text-anchor="middle" font-family="Arial">Póster no disponible</text></svg>`
+    );
+    const info = document.createElement("div");
+    info.className = "info";
+    const titulo = document.createElement("h3");
+    titulo.textContent = t.nombre;
+    titulo.style.cursor = "pointer";
+    titulo.title = "Ver información";
+    titulo.addEventListener("click", () => abrirDetalles(t));
+    const tipo = document.createElement("p");
+    tipo.textContent = t.tipo + " · " + t.anio;
+    const nota = document.createElement("p");
+    nota.textContent = "★ " + t.puntuacion + " / 10";
+    const sinopsis = document.createElement("p");
+    sinopsis.className = "sinopsis";
+    sinopsis.textContent = t.sinopsis.length > 155 ? t.sinopsis.slice(0, 152) + "…" : t.sinopsis;
+    const boton = document.createElement("button");
+    boton.type = "button";
+    boton.textContent = "Ver información";
+    boton.onclick = () => abrirDetalles(t);
+    info.append(titulo, tipo, nota, sinopsis, boton);
+    tarjeta.append(img, info);
+    resultados.append(tarjeta);
+  });
+}
+
+function abrirDetalles(t) {
+  const anterior = document.getElementById("modal-detalles");
+  if (anterior) anterior.remove();
+  const modal = document.createElement("div");
+  modal.id = "modal-detalles";
+  modal.style.cssText = "position:fixed;inset:0;background:#000e;z-index:1000;display:flex;align-items:center;justify-content:center;padding:18px";
+  const panel = document.createElement("div");
+  panel.style.cssText = "max-width:560px;width:100%;background:#191922;border:1px solid #393344;border-radius:14px;padding:20px";
+  const titulo = document.createElement("h2");
+  titulo.textContent = t.nombre;
+  const mensaje = document.createElement("p");
+  mensaje.style.cssText = "color:#ddd;line-height:1.5";
+  mensaje.textContent = "Información de catálogo. La reproducción de vídeos debe ser configurada por el administrador de VYRO.";
+  const cerrar = document.createElement("button");
+  cerrar.textContent = "Cerrar";
+  cerrar.onclick = () => modal.remove();
+  panel.append(titulo, mensaje, cerrar);
+  modal.append(panel);
+  modal.addEventListener("click", e => { if (e.target === modal) modal.remove(); });
+  document.body.append(modal);
+}
+
+async function cargarCatalogo(reset = false) {
+  if (cargando) return;
+  if (!obtenerClave()) {
+    estado.textContent = "Configura tu API Key de TMDB arriba para cargar títulos y pósteres reales.";
+    return;
+  }
+  cargando = true;
+  if (reset) pagina = 1;
+  estado.textContent = "Cargando películas, series y anime…";
+  resultados.replaceChildren();
+  try {
+    const texto = buscar.value.trim();
+    let lista = [];
+    if (texto) {
+      const data = await tmdb("/search/multi", { query: texto, page: pagina, include_adult: false });
+      lista = (data.results || [])
+        .filter(x => x.media_type === "movie" || x.media_type === "tv")
+        .map(x => normalizar(x, x.media_type))
+        .filter(x => x.poster);
+    } else if (filtro === "Película") {
+      const data = await tmdb("/movie/popular", { page: pagina, region: "DO" });
+      lista = (data.results || []).map(x => normalizar(x, "movie"));
+    } else if (filtro === "Serie") {
+      const data = await tmdb("/tv/popular", { page: pagina });
+      lista = (data.results || []).map(x => normalizar(x, "tv"));
+    } else if (filtro === "Anime") {
+      const data = await tmdb("/discover/tv", {
+        page: pagina, with_genres: "16", with_origin_country: "JP",
+        sort_by: "popularity.desc"
+      });
+      lista = (data.results || []).map(x => normalizar(x, "tv"));
+      lista.forEach(x => x.tipo = "Anime");
+    } else {
+      const [pelis, series, anime] = await Promise.all([
+        tmdb("/movie/popular", { page: pagina, region: "DO" }),
+        tmdb("/tv/popular", { page: pagina }),
+        tmdb("/discover/tv", { page: pagina, with_genres: "16", with_origin_country: "JP", sort_by: "popularity.desc" })
+      ]);
+      lista = [
+        ...(pelis.results || []).map(x => normalizar(x, "movie")),
+        ...(series.results || []).map(x => normalizar(x, "tv")),
+        ...(anime.results || []).map(x => ({ ...normalizar(x, "tv"), tipo: "Anime" }))
+      ];
+      lista.sort((a, b) => Number(b.original.popularity || 0) - Number(a.original.popularity || 0));
+    }
+    mostrarTarjetas(lista);
+    estado.textContent = lista.length
+      ? lista.length + (lista.length === 1 ? " título cargado desde TMDB." : " títulos cargados desde TMDB.") + " · Página " + pagina
+      : "No hay resultados. Prueba otra búsqueda.";
+    const paginacion = document.createElement("div");
+    paginacion.style.cssText = "display:flex;gap:10px;justify-content:center;grid-column:1/-1;margin:10px 0 20px";
+    const mas = document.createElement("button");
+    mas.textContent = "Cargar más";
+    mas.onclick = () => { pagina++; cargarCatalogo(false); };
+    paginacion.append(mas);
+    resultados.append(paginacion);
+  } catch (error) {
+    resultados.replaceChildren();
+    tarjetaVacia(error.message || "No se pudo conectar con TMDB.");
+    estado.textContent = "No se pudo cargar el catálogo.";
+  } finally {
+    cargando = false;
+  }
+}
+
+document.querySelectorAll(".filters button").forEach(b => b.addEventListener("click", () => {
+  filtro = b.dataset.tipo;
+  pagina = 1;
+  document.querySelectorAll(".filters button").forEach(x => x.classList.toggle("active", x === b));
+  cargarCatalogo(true);
+}));
+
+let temporizadorBusqueda;
+buscar.addEventListener("input", () => {
+  clearTimeout(temporizadorBusqueda);
+  temporizadorBusqueda = setTimeout(() => {
+    pagina = 1;
+    cargarCatalogo(true);
+  }, 350);
+});
+
+crearConfiguracion();
+if (obtenerClave()) cargarCatalogo(true);
+else estado.textContent = "Configura tu API Key de TMDB arriba para mostrar contenido real.";
+</script>
+</body>
+</html>
